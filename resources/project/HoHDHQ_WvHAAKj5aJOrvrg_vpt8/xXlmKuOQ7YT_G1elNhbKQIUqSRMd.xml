@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Info description="Principal component analysis (PCA) is perhaps the most widely used method for data dimensionality reduction. A key question in PCA is deciding how many factors to retain. This package implements a new approach to automatically selecting the number of principal components based on the  Bayesian minimum message length method of inductive inference. "/>
