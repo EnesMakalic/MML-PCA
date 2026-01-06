@@ -40,7 +40,8 @@ function [eigenvalues, eigenvecs, true_params, x] = generate_pca_data(N, K, opti
 %   [eigs, eigv, params] = generate_pca_data(50, 10, 'J', 2, 'seed', 42);
 %
 % Reference:
-%   Makalic & Schmidt, "MML Probabilistic Principal Component Analysis"
+% E. Makalic and Daniel F. Schmidt, MML Probabilistic Principal Component
+% Analysis, arXiv:2209.14559 [stat.ME], 2026.
 arguments
     N (1,1) {mustBePositive, mustBeInteger} = 100
     K (1,1) {mustBePositive, mustBeInteger} = 10

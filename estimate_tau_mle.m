@@ -26,7 +26,8 @@ function [tau_ml, alpha_ml, Sigma_ml] = estimate_tau_mle(eigenvalues, eigenvecs,
 %   tau_ML = estimate_tau_mle(eigs, 2);
 %
 % Reference:
-%   Makalic & Schmidt, "MML Probabilistic Principal Component Analysis"
+% E. Makalic and Daniel F. Schmidt, MML Probabilistic Principal Component
+% Analysis, arXiv:2209.14559 [stat.ME], 2026.
 arguments
     eigenvalues (:,:) {mustBeNumeric}
     eigenvecs (:,:) {mustBeNumeric}

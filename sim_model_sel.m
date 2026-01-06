@@ -19,7 +19,8 @@ function [S1mean, S2mean, KLmean, model_mml, model_bic, model_ard, model_spa, mo
 %   display - Do we display the result summary? (default: 1)
 %
 % Reference:
-%   Makalic & Schmidt, "MML Probabilistic Principal Component Analysis"
+% E. Makalic and Daniel F. Schmidt, MML Probabilistic Principal Component
+% Analysis, arXiv:2209.14559 [stat.ME], 2026.
 %
 arguments
     niter (1,1) double {mustBePositive,mustBeInteger} = 1e3;

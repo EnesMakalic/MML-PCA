@@ -23,7 +23,8 @@ function [tau_mml, alpha_mml, Sigma_mml] = estimate_tau_mml(eigenvalues, eigenve
 %   tau_mml = estimate_tau_mle(eigs, 100, 2);
 %
 % Reference:
-%   Makalic & Schmidt, "MML Probabilistic Principal Component Analysis"
+% E. Makalic and Daniel F. Schmidt, MML Probabilistic Principal Component
+% Analysis, arXiv:2209.14559 [stat.ME], 2026.
 
 delta = eigenvalues(:);
 K = numel(delta);
