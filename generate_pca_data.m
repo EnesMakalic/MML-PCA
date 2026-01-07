@@ -94,7 +94,7 @@ if(isempty(sigma2)) % if sigma2 not specified...
 
     % Sample sigma2 from distribution h(sigma) \propto 1/sigma
     u = rand(1) * (log(b) - log(a)) + log(a); % uniform in [log a, log b]
-    sigma2 = exp(u)^2;
+    sigma2 = exp(2*u);
 end
 
 %% Determine alpha
