@@ -13,6 +13,15 @@ function [AvgPerf, collapsed] = sim_param_est(niter, snr, N, K, J, display)
 %   J       - Number of true latent factors
 %   display - Do we display the result summary? (default: 1)
 %
+% Outputs:
+%   AvgPerf - 3 x 2 matrix with average performance statistics for MLE and MML:
+%                 [S1_ML, S1_MML]
+%                 [S2_ML, S2_MML]
+%                 [KL_ML, KL_MML]
+%
+%  collapsed - Percentage of iterations where MML collapsed J and estimated
+%              a simpler model with <J latent factors
+%
 % Reference:
 % E. Makalic and Daniel F. Schmidt, MML Probabilistic Principal Component
 % Analysis, arXiv:2209.14559 [stat.ME], 2026.
@@ -76,6 +85,9 @@ AvgPerf = [ ...
     mean([kl_ml, kl_mml])
 ];
 
+% Percentage of iterations where MML collapsed J
+collapsed = collapsed/niter*100;
+
 if(display)
     % Convert elapsed seconds
     days    = floor(tElapsed / 86400);
@@ -97,7 +109,7 @@ if(display)
     % Join and print
     fprintf('Elapsed time: %s\n', strjoin(parts, ', '));
 
-    fprintf('MML collapsed a factor in %4.2f%% of iterations. \n\n', collapsed/niter*100);
+    fprintf('MML collapsed a factor in %4.2f%% of iterations. \n\n', collapsed);
        
     tb = table(AvgPerf(:,1),AvgPerf(:,2), ...
         'variablenames',{'MLE','MML'},'RowNames',{'S1','S2','KL'});
