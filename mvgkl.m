@@ -8,7 +8,7 @@
 %  Examples:
 %
 %  1) Univariate Gaussians: KL( N(-1,1) || N(+1,1) )
-%  mu1 = -1; mu = +1; s1 = 1; s2 = 1;   
+%  mu1 = -1; mu2 = +1; s1 = 1; s2 = 1;   
 %  mvgkl(mu1, s1^2, mu2, s2^2)
 %
 %  2) Multivariate Gaussians: KL( N(mu1,S1) || N(mu2,S2) )
