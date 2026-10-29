@@ -25,18 +25,22 @@ Place them in `external/Laplace_PCA` and `external/lightspeed` in this folder, o
 Then run, from this folder:
 
 ```matlab
-run_all          % all simulations, 10^5 replications each (about 1 hour on 12 workers)
+run_all          % Tables 1-3 and S2-S10: 10^5 replications each (about 1 hour on 12 workers)
+sim_asymptotic   % Table S1: 2x10^4 replications at N = 100, 1000, 10000 (about 6 hours on 14 workers)
 ```
+
+`sim_asymptotic` needs only MATLAB and the Parallel Computing Toolbox.
 
 ```
 python3 scripts/make_tables.py
 ```
 
-`run_all` writes the simulation results to `results/`, and `make_tables.py` writes the LaTeX tables to `results/tex/`:
+`run_all` and `sim_asymptotic` write the simulation results to `results/`, and `make_tables.py` writes the LaTeX tables to `results/tex/`:
 
 | Results file | Tables |
 |---|---|
-| `final_compare_equal.csv` | Table 1; Supplementary Tables S1–S3 |
-| `final_compare_geometric.csv` | Supplementary Tables S4–S6 |
-| `final_compare_highdim.csv` | Supplementary Tables S7–S9 |
+| `final_compare_equal.csv` | Table 1; Supplementary Tables S2–S4 |
+| `final_compare_geometric.csv` | Supplementary Tables S5–S7 |
+| `final_compare_highdim.csv` | Supplementary Tables S8–S10 |
 | `final_modelsel.csv` | Tables 2–3 |
+| `final_asymptotic.csv` | Supplementary Table S1 |

@@ -4,7 +4,8 @@ Writes to results/tex/:
   table1_body.tex          body of main Table 1 (ML vs MML87, matched rank)
   modelsel_rho2_body.tex   body of main Table 2 (pure noise and rho = 2)
   modelsel_rho5_body.tex   body of main Table 3 (rho = 5)
-  supp_tables_S1_S9.tex    supplementary Tables S1-S9 (complete floats)
+  asymptotic_body.tex      body of supplementary Table S1 (asymptotic checks)
+  supp_tables_S2_S10.tex   supplementary Tables S2-S10 (complete floats)
 Prints the Monte Carlo standard errors and the statistics quoted in the text.
 Requires only the Python standard library.
 """
@@ -138,6 +139,43 @@ def modelsel_tables(fname='final_modelsel.csv'):
     print('Model selection: largest MCSE of KL excluding SPA = %.4f' % se)
 
 
+# ------------------------------------------------- supplementary Table S1
+ASYM_ROWS = [
+    ('fixed', 'var_tau', r'$\operatorname{Var}\{\sqrt N(\widehat\tau-\tau)\}$', '%.3f'),
+    ('fixed', 'var_x1', r'$\operatorname{Var}\{\sqrt N(\widehat x_1-x_1)\}$', '%.1f'),
+    ('fixed', 'var_x2', r'$\operatorname{Var}\{\sqrt N(\widehat x_2-x_2)\}$', '%.1f'),
+    ('fixed', 'cov_tau_x1', r'$\operatorname{Cov}\{\sqrt N(\widehat\tau-\tau),\sqrt N(\widehat x_1-x_1)\}$', '%.3f'),
+    ('fixed', 'cov_x1_x2', r'$\operatorname{Cov}\{\sqrt N(\widehat x_1-x_1),\sqrt N(\widehat x_2-x_2)\}$', '%.3f'),
+    ('fixed', 'coverage', r'Coverage of the 95\% interval for $\tau$', 'pct'),
+    ('proportional', 'mean_Ntau', r'Mean of $N(\widehat\tau-\tau)$', '%.3f'),
+    ('proportional', 'var_Ntau', r'$\operatorname{Var}\{N(\widehat\tau-\tau)\}$', '%.2f'),
+    ('proportional', 'var_x1', r'$\operatorname{Var}\{\sqrt N(\widehat x_1-\tau z_1)\}$', '%.1f'),
+    ('proportional', 'var_x2', r'$\operatorname{Var}\{\sqrt N(\widehat x_2-\tau z_2)\}$', '%.1f'),
+]
+
+
+def asymptotic_body(fname='final_asymptotic.csv'):
+    rows = list(csv.DictReader(open(RES + fname)))
+    Ns = sorted({int(r['N']) for r in rows})
+    get = {(r['regime'], r['quantity'], int(r['N'])): r for r in rows}
+    fmt = lambda f, v: ('$%.0f\\%%$' % (100 * v) if v == 0.95 else '$%.1f\\%%$' % (100 * v)) if f == 'pct' else '$' + f % v + '$'
+    head = {'fixed': r'\multicolumn{%d}{l}{\emph{Fixed dimension:} $K=6$, $J=2$, $\tau=1$, $(\rho_1,\rho_2)=(5,2)$}\\',
+            'proportional': r'\multicolumn{%d}{l}{\emph{Proportional regime:} $K=N/2$, $J=2$, $\tau=1$, $(\rho_1,\rho_2)=(8,4)$}\\'}
+    out, prev = [], None
+    for reg, q, label, f in ASYM_ROWS:
+        if reg != prev:
+            if prev: out.append(r'\midrule')
+            out.append(head[reg] % (len(Ns) + 2)); prev = reg
+        lim = float(get[(reg, q, Ns[0])]['limit'])
+        est = [fmt(f, float(get[(reg, q, N)]['estimate'])) for N in Ns]
+        out.append(' & '.join([label, fmt(f, lim)] + est) + r' \\')
+    for N in Ns:
+        print('Table S1, N=%d: regular fits %s' % (N, ', '.join('%s %.2f%%' % (g, float(get[(g, 'var_x1', N)]['regular_pct'])) for g in ('fixed', 'proportional'))))
+    for reg, q, _, _ in ASYM_ROWS:
+        print('Table S1 MCSE %-12s %-10s %s' % (reg, q, ' '.join('%.4f' % float(get[(reg, q, N)]['mcse']) for N in Ns)))
+    return '\n'.join(out) + '\n'
+
+
 if __name__ == '__main__':
     os.makedirs(OUT, exist_ok=True)
     eq = load('final_compare_equal.csv', ['N', 'SNR', 'J'])
@@ -156,7 +194,10 @@ if __name__ == '__main__':
                               ('rKL', 'Reverse KL divergence (half the Stein loss)')]:
             cap = '%s at a matched rank, averaged over $10^5$ simulated data sets with %s.' % (mname, desc)
             out.append(supp_table(cells, keys, metric, cap, 'tab:supp:%s:%s' % (design, metric)))
-    open(OUT + 'supp_tables_S1_S9.tex', 'w').write('\n'.join(out))
+    open(OUT + 'supp_tables_S2_S10.tex', 'w').write('\n'.join(out))
     print('supplement tables written')
     modelsel_tables()
     print('model-selection tables written to', OUT)
+    if os.path.exists(RES + 'final_asymptotic.csv'):
+        open(OUT + 'asymptotic_body.tex', 'w').write(asymptotic_body())
+        print('Table S1 written')
