@@ -6,11 +6,21 @@ This repository contains a MATLAB implementation of the **MML Probabilistic Prin
 
 ## Usage
 
+`generate_pca_data` simulates data from a probabilistic PCA model. For example, N = 100 observations in K = 10 dimensions with J = 2 components, residual variance 1 and per-component signal-to-noise ratio 5:
+
+```matlab
+[~, ~, truth, X] = generate_pca_data(100, 10, 'J', 2, 'sigma2', 1, ...
+                                     'SNR', 1, 'LoadingDesign', 'equal');
+```
+
+Here `SNR` is the total signal-to-noise ratio, sum(rho_j)/K, so `SNR = 1` gives rho_1 = rho_2 = 5. `truth` holds the generating parameters.
+
 `mml_ppca_fp` selects the number of principal components and estimates the model parameters:
 
 ```matlab
 res = mml_ppca_fp(X);                   % select J from 0,...,K-1
 res = mml_ppca_fp(X, 'NumFactors', 2);  % fit a given J
+res.J, res.tau                          % selected rank and residual variance
 ```
 
 ## Reproducing the tables in the paper
