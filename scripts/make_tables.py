@@ -2,8 +2,9 @@
 
 Writes to results/tex/:
   table1_body.tex          body of main Table 1 (ML vs MML87, matched rank)
-  modelsel_rho2_body.tex   body of main Table 2 (pure noise and rho = 2)
-  modelsel_rho5_body.tex   body of main Table 3 (rho = 5)
+  compare_summary_body.tex body of main Table 2 (comparison with alternative estimators)
+  modelsel_rho2_body.tex   body of main Table 3 (pure noise and rho = 2)
+  modelsel_rho5_body.tex   body of main Table 4 (rho = 5)
   asymptotic_body.tex      body of supplementary Table S1 (asymptotic checks)
   supp_tables_S2_S10.tex   supplementary Tables S2-S10 (complete floats)
 Prints the Monte Carlo standard errors and the statistics quoted in the text.
@@ -100,7 +101,33 @@ def supp_table(cells, keys, metric, caption, label):
 
 
 
-# ---------------------------------------------------------- main Tables 2-3
+# ------------------------------------------------------------ main Table 2
+def compare_summary_body(designs):
+    """Number of settings in which each estimator attains the smallest average
+    loss, for each design and criterion, and the MML87 versus DGJ-S gap."""
+    out = []
+    for d, (label, cells) in enumerate(designs):
+        ks = sorted(cells)
+        g = lambda k, m, x: float(cells[k][m][x])
+        for r, (metric, mname) in enumerate([('S2', '$S_2$'), ('KL', 'Forward KL'), ('rKL', 'Reverse KL')]):
+            meths = METHODS[:4] if metric == 'S2' else METHODS
+            wins = {m: 0 for m in meths}
+            for k in ks:
+                wins[min(meths, key=lambda m: g(k, m, metric))] += 1
+            cnt = [str(wins[m]) if m in wins else '--' for m in METHODS]
+            lead = ('\\multirow{3}{*}{%s} & \\multirow{3}{*}{%d}' % (label, len(ks))) if r == 0 else ' & '
+            out.append('%s & %s & %s \\\\' % (lead, mname, ' & '.join(cnt)))
+        if d < len(designs) - 1:
+            out.append('\\midrule')
+        reg = [k for k in ks if g(k, 'ML', 'regular_pct') >= 90]
+        gap = sorted(abs(100 * (g(k, 'MML', 'rKL') / g(k, 'DGJstP', 'rKL') - 1)) for k in reg)
+        med = gap[len(gap) // 2] if len(gap) % 2 else (gap[len(gap) // 2 - 1] + gap[len(gap) // 2]) / 2
+        print('Table 2, %s: %d settings, %d regular; |MML87/DGJ-S - 1| in reverse KL: median %.2f%%, max %.2f%%'
+              % (label, len(ks), len(reg), med, gap[-1]))
+    return '\n'.join(out) + '\n'
+
+
+# ---------------------------------------------------------- main Tables 3-4
 MS_METHODS = ['MML', 'BIC', 'Bayes', 'GIC', 'SPA']
 
 
@@ -185,6 +212,8 @@ if __name__ == '__main__':
     out = []
     geo = load('final_compare_geometric.csv', ['N', 'SNR', 'J'])
     hd = load('final_compare_highdim.csv', ['K', 'N', 'SNR', 'J'])
+    open(OUT + 'compare_summary_body.tex', 'w').write(compare_summary_body(
+        [('Equal', eq), ('Geometric', geo), ('Higher-dimensional', hd)]))
     for design, cells, keys, desc in [
             ('equal', eq, ['N', '\\rho', 'J'], 'equal per-component signal-to-noise ratio $\\rho$ and $K=10$'),
             ('geometric', geo, ['N', '\\rho', 'J'], 'geometric loadings with weakest-component signal-to-noise ratio $\\rho$, ratio $0.75$, and $K=10$'),

@@ -2,13 +2,13 @@
 %
 % Runs, with 1e5 replications each:
 %   1. sim_compare, equal loadings      -> results/final_compare_equal.csv
-%      (main Table 1; supplementary Tables S2-S4)
+%      (main Tables 1-2; supplementary Tables S2-S4)
 %   2. sim_compare, geometric loadings  -> results/final_compare_geometric.csv
-%      (supplementary Tables S5-S7)
+%      (main Table 2; supplementary Tables S5-S7)
 %   3. sim_compare, high-dimensional    -> results/final_compare_highdim.csv
-%      (supplementary Tables S8-S10)
+%      (main Table 2; supplementary Tables S8-S10)
 %   4. sim_model_sel2, equal loadings   -> results/final_modelsel.csv
-%      (main Tables 2-3)
+%      (main Tables 3-4)
 % Supplementary Table S1 is produced separately by sim_asymptotic.m (about
 % 5-6 hours). The LaTeX tables are then produced by scripts/make_tables.py.
 %
