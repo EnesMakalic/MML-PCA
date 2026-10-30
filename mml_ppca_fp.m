@@ -33,10 +33,11 @@ function res = mml_ppca_fp(X, varargin)
 % If an update leaves the admissible interval, the damping parameter w is
 % halved and the update repeated. The iteration stops when the undamped
 % residual satisfies |g_J(tau) - tau| <= Tol*tau, which makes the result
-% scale equivariant. If the iteration fails, existence is decided by the
-% concave scaled score H(t) = 2 t^2 dI/dt: a regular interior minimum exists
-% if and only if max H > 0, and it is then unique (see SOLVE_TAU_MML). A rank
-% is reported as having no regular solution only when this test proves it.
+% scale equivariant. The iterate is used only as a starting value: every fit
+% is then certified by the concave scaled score H(t) = 2 t^2 dI/dt. A regular
+% interior minimum exists if and only if max H > 0, and it is then unique
+% (see SOLVE_TAU_MML). A rank is reported as having no regular solution only
+% when this test proves it.
 % For J = 0 the estimate is tau = B/A in closed form.
 %
 % Name-value options
@@ -51,7 +52,7 @@ function res = mml_ppca_fp(X, varargin)
 %   'Verbose'       print the per-J table                     (default false)
 %   'Warn'          issue diagnostic warnings                 (default true)
 %
-% Output RES has the same fields as MML_PPCA: J, mu, tau, alpha, b, P, A,
+% Output RES has fields J, mu, tau, alpha, b, P, A,
 % B, Omega, codelength, converged, methodUsed, tauRatio, table, collapsed,
 % warnings and diagnostics, plus RES.unresolved (ranks whose existence could
 % not be determined numerically). The columns of RES.table are
@@ -213,7 +214,7 @@ end
 end
 
 %% -----------------------------------------------------------------------
-% Diagnostics and codelength helpers (shared with mml_ppca.m).
+% Diagnostics and codelength helpers.
 function d=local_diagnostics(res,tbl,delta,N,K,Jmax,scanned)
 d=struct('saturated',false,'boundary',false,'interiorMinimum',false, ...
     'residHeterogeneity',NaN,'sphericityStat',NaN,'sphericityDf',0, ...

@@ -88,7 +88,9 @@ for J = o.J
         [~,jb] = min(bic); jb = jb-1;
         [~,jg] = min(gic); jg = jg-1;
         [~,jn] = min(nml); jn = jn-1;
-        jl = min(Jmax, laplace_pca(Xc));
+        % Laplace evidence: choose the best rank among 0..Jmax (laplace_pca
+        % itself searches up to K-1, so capping its choice would differ)
+        [~,pl] = laplace_pca(Xc); [~,jl] = max(pl(1:Jmax+1)); jl = jl-1;
         % signflippa draws from the global generator; make it reproducible by
         % continuing this replication's own stream
         RandStream.setGlobalStream(stream);

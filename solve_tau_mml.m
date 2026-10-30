@@ -15,8 +15,8 @@ function [tau, x, info] = solve_tau_mml(s, N, J, varargin)
 %      residual satisfies |g(tau)-tau| <= Tol*tau. The iterate is used only
 %      as a starting value: it is not accepted until step 2 certifies it.
 %   2. Every fit is then certified with the scaled score
-%        H(t) = A*t - B - C*t^2*sum_j 1/xhat_j(t) = 2 t^2 dI/dt
-%      is used. H is strictly concave on (0, tauMax) with H(0+) = -B < 0, so a
+%        H(t) = A*t - B - C*t^2*sum_j 1/xhat_j(t) = 2 t^2 dI/dt.
+%      H is strictly concave on (0, tauMax) with H(0+) = -B < 0, so a
 %      regular interior local minimum exists if and only if max H > 0; it is
 %      then unique and is the first zero of H. The maximiser of H and that
 %      zero are found by bracketed root finding.
