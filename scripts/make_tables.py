@@ -37,6 +37,11 @@ def bold_min(vals, fmt):
     return ['{\\bf %s}' % x if x == best else x for x in s]
 
 
+def fmt_se(x):
+    """Two significant figures in plain decimal notation (no exponent)."""
+    return ('%.2g' % x) if x >= 1e-4 else '%.*f' % (1 - int(__import__('math').floor(__import__('math').log10(x))), x)
+
+
 def num(x):
     return '%g' % x
 
@@ -95,7 +100,7 @@ def supp_table(cells, keys, metric, caption, label):
         lines.append(' & '.join(lead + ['%.0f' % float(cells[c]['ML']['regular_pct'])] + bold_min(vals, fmt)) + ' \\\\')
     se = max(float(cells[c][m]['se_' + metric]) for c in cells for m in meths)
     lines += ['\\bottomrule', '\\end{tabular}',
-              '\\caption{%s Bold marks the smallest value in each row. The largest Monte Carlo standard error is $%s$.}' % (caption, '%.2g' % se),
+              '\\caption{%s Bold marks the smallest value in each row. The largest Monte Carlo standard error is $%s$.}' % (caption, fmt_se(se)),
               '\\label{%s}' % label, '\\end{center}', '\\end{table}', '']
     return '\n'.join(lines)
 
