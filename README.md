@@ -18,8 +18,8 @@ Here `SNR` is the total signal-to-noise ratio, sum(rho_j)/K, so `SNR = 1` gives 
 `mml_ppca_fp` selects the number of principal components and estimates the model parameters:
 
 ```matlab
-res = mml_ppca_fp(X);                   % select J from 0,...,K-1
-res = mml_ppca_fp(X, 'NumFactors', 2);  % fit a given J
+res = mml_ppca_fp(X, 'Verbose', true);                   % select J from 0,...,K-1
+res = mml_ppca_fp(X, 'NumFactors', 2, 'Verbose', true);  % fit a given J
 res.J, res.tau                          % selected rank and residual variance
 ```
 
