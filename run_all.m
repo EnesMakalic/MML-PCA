@@ -21,7 +21,7 @@
 % would otherwise shadow MATLAB's. Lightspeed's solve_tril is compiled into
 % build/ if no compiled version is found.
 %
-% Running everything took about 55 minutes on 12 workers.
+% Running everything takes about 1 hour on 12 workers.
 
 here = fileparts(mfilename('fullpath'));
 res  = fullfile(here,'results');
