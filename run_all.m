@@ -12,20 +12,18 @@
 % Supplementary Table S1 is produced separately by sim_asymptotic.m (about
 % 5-6 hours). The LaTeX tables are then produced by scripts/make_tables.py.
 %
-% Requirements: MATLAB with the Parallel Computing Toolbox and a C compiler
-% for MEX, and two toolboxes by Tom Minka that are not distributed here:
+% Requirements: MATLAB with the Parallel Computing Toolbox, and two toolboxes
+% by Tom Minka that are not distributed here:
 %   - the PCA toolbox (laplace_pca), https://tminka.github.io/papers/pca/
-%   - lightspeed (mvnormpdfln, used by pca_nml), https://github.com/tminka/lightspeed
+%   - lightspeed (row_sum, used by laplace_pca), https://github.com/tminka/lightspeed
 % Put them in external/Laplace_PCA and external/lightspeed next to this file,
 % or add them to the END of the MATLAB path yourself; lightspeed's normcdf.m
-% would otherwise shadow MATLAB's. Lightspeed's solve_tril is compiled into
-% build/ if no compiled version is found.
+% would otherwise shadow MATLAB's. No MEX compilation is needed.
 %
 % Running everything takes about 1 hour on 12 workers.
 
 here = fileparts(mfilename('fullpath'));
 res  = fullfile(here,'results');
-bld  = fullfile(here,'build');
 if ~exist(res,'dir'), mkdir(res); end
 addpath(here);
 
@@ -36,17 +34,8 @@ end
 if exist('laplace_pca','file') ~= 2
     error('run_all:external','laplace_pca not found: install Minka''s PCA toolbox (see the header of run_all.m).');
 end
-if exist('mvnormpdfln','file') ~= 2
-    error('run_all:external','mvnormpdfln not found: install Minka''s lightspeed toolbox (see the header of run_all.m).');
-end
-
-% Compile lightspeed's solve_tril (needed by pca_nml via mvnormpdfln).
-if ~exist(bld,'dir'), mkdir(bld); end
-addpath(bld);
-if exist('solve_tril') ~= 3 %#ok<EXIST>   % 3 = compiled MEX file on the path
-    lsdir = fileparts(which('mvnormpdfln'));
-    mex('-outdir', bld, '-DBLAS64', fullfile(lsdir,'solve_tril.c'), '-lmwblas');
-    rehash;
+if exist('row_sum','file') ~= 2
+    error('run_all:external','row_sum not found: install Minka''s lightspeed toolbox (see the header of run_all.m).');
 end
 
 R = 1e5;

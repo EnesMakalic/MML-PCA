@@ -8,11 +8,14 @@ function T = sim_model_sel2(niter, varargin)
 %            same criterion as Minka's bic_pca, but with J = 0 allowed
 %   Bayes    Laplace approximation to the evidence (Minka 2000, laplace_pca)
 %   GIC      generalized information criterion (pca_gic)
-%   NML      normalized maximum likelihood (pca_nml)
-%   SPA      signflip parallel analysis (signflippa)
+%   SPA      signflip parallel analysis (signflippa), pairwise comparison
+%            with 100 signflip draws against their maximum (q = 1), the
+%            setting used by Hong, Sheng and Dobriban; by their
+%            Proposition 3.2 the false-selection rate under pure noise is
+%            then at most 1/101
 % over candidate ranks 0..Jmax. All methods other than MML use maximum
-% likelihood estimates at their selected rank. Bayes and NML require the
-% External-code folders (Laplace_PCA, lightspeed) on the MATLAB path.
+% likelihood estimates at their selected rank. Bayes requires Minka's
+% laplace_pca and lightspeed's row_sum on the MATLAB path.
 %
 % Design: per-component signal-to-noise ratio (rho_j = lambda_j^2/tau),
 % tau = 1, Haar-distributed signal directions, unknown mean (data are
@@ -42,7 +45,7 @@ p.parse(varargin{:});
 o = p.Results;
 if nargin < 1 || isempty(niter), niter = 2000; end
 
-methods = {'MML','MML-ML','BIC','Bayes','GIC','NML','SPA'};
+methods = {'MML','MML-ML','BIC','Bayes','GIC','SPA'};
 nm = numel(methods); K = o.K; Jmax = o.Jmax; gr = o.GeometricRatio;
 rows = {}; cell_id = 0;
 for N = o.N
@@ -75,28 +78,25 @@ for J = o.J
         thr(i) = (jm == max(okJ));
 
         % BIC and GIC over 0..Jmax with ML estimates
-        bic = zeros(Jmax+1,1); gic = zeros(Jmax+1,1); nml = zeros(Jmax+1,1);
+        bic = zeros(Jmax+1,1); gic = zeros(Jmax+1,1);
         for r = 0:Jmax
             tauML = mean(s(r+1:K));
             negLL = N/2*(sum(log(s(1:r))) + (K-r)*log(tauML) + K + K*log(2*pi));
             P = K + K*r - r*(r-1)/2 + 1;
             bic(r+1) = negLL + P/2*log(N);
             gic(r+1) = pca_gic(s,tauML,r,N);
-            SigML = U(:,1:r)*diag(s(1:r)-tauML)*U(:,1:r)' + tauML*eye(K);
-            nml(r+1) = pca_nml(Xc,r,[],s,SigML,tauML,1);
         end
         [~,jb] = min(bic); jb = jb-1;
         [~,jg] = min(gic); jg = jg-1;
-        [~,jn] = min(nml); jn = jn-1;
         % Laplace evidence: choose the best rank among 0..Jmax (laplace_pca
         % itself searches up to K-1, so capping its choice would differ)
         [~,pl] = laplace_pca(Xc); [~,jl] = max(pl(1:Jmax+1)); jl = jl-1;
         % signflippa draws from the global generator; make it reproducible by
         % continuing this replication's own stream
         RandStream.setGlobalStream(stream);
-        js = min(Jmax, signflippa(Xc));
+        js = min(Jmax, signflippa(Xc, 100, 100));
 
-        jj = [jm, jm, jb, jl, jg, jn, js];
+        jj = [jm, jm, jb, jl, jg, js];
         kf = zeros(1,nm); kr = zeros(1,nm);
         for m = 1:nm
             if m == 1

@@ -25,10 +25,10 @@ res.J, res.tau                                           % selected rank and res
 
 ## Reproducing the tables in the paper
 
-Requirements: MATLAB with the Parallel Computing Toolbox and a C compiler for MEX, Python 3, and two toolboxes by Tom Minka:
+Requirements: MATLAB with the Parallel Computing Toolbox, Python 3, and two toolboxes by Tom Minka:
 
 - the PCA toolbox (`laplace_pca`): https://tminka.github.io/papers/pca/
-- lightspeed: https://github.com/tminka/lightspeed
+- lightspeed (for `row_sum`, used by `laplace_pca`): https://github.com/tminka/lightspeed
 
 Place them in `external/Laplace_PCA` and `external/lightspeed` in this folder, or add them to the **end** of the MATLAB path.
 

@@ -98,7 +98,7 @@
 %       - n > p (for well-posed estimation)
 %
 %   See also ESTIMATE_TAU_MLE, ESTIMATE_TAU_MML, BIC_PCA, LAPLACE_PCA,
-%   SIGNFLIPPA, PCA_NML
+%   SIGNFLIPPA
 %
 %   References:
 %     [1] H. Hung, S.-Y. Huang, and C.-K. Ing, "A generalized information
