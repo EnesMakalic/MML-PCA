@@ -54,3 +54,12 @@ python3 scripts/make_tables.py
 | `final_compare_highdim.csv` | Table 2; Supplementary Tables S8–S10 |
 | `final_modelsel.csv` | Tables 3–4 |
 | `final_asymptotic.csv` | Supplementary Table S1 |
+
+## Checking the bias formulas (Theorem 1)
+
+`checks/bias_full.m` compares the empirical bias of the ML and MML87 estimates of the residual variance with the first-order formulas of Theorem 1, over K = 5, 10, 20, 50, J = 1, 2, 4, three signal strengths and N = 50 to 5000 (10^5 replications per setting, about 7 minutes on 12 workers). `checks/bias_check.m` is a smaller version with K = 10. Run, from this folder:
+
+```matlab
+addpath('checks');
+T = bias_full;   % table of N*bias: formula vs empirical, with standard errors
+```
