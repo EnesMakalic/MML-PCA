@@ -63,3 +63,12 @@ python3 scripts/make_tables.py
 addpath('checks');
 T = bias_full;   % table of N*bias: formula vs empirical, with standard errors
 ```
+
+## Checking Corollary 1 and the entropy-loss remark (Section 5)
+
+`checks/cor_sim.m` computes the Stein and entropy losses of the ML and MML87 covariance estimates in the proportional regime K = gamma*N, for gamma = 0.25, 0.5, 1, one or two spikes and N = 100 to 1600. It compares the mean of L(ML) - L(MML87) with its limit from Corollary 1 (Stein loss, always positive) and from the remark after it (entropy loss, either sign), and reports how often MML87 has the smaller loss. With 5000 replications per setting it takes about 23 minutes on 14 workers. Run, from this folder:
+
+```matlab
+addpath('checks');
+T = cor_sim(5000, [100 200 400 800 1600]);   % simulated vs limiting loss differences
+```
