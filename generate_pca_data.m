@@ -84,6 +84,8 @@ else
         case "geometric"
             weights=o.GeometricRatio.^(0:J-1)';
         case "halfcauchy"
+            % half-Cauchy magnitudes by inverting the Cauchy CDF; the
+            % weights are their squares (relative signal strengths)
             if isempty(stream), u=rand(J,1); else, u=rand(stream,J,1); end
             z=abs(tan(pi*(u-0.5)));
             weights=max(z.^2,realmin('double'));
@@ -102,6 +104,8 @@ else
     lambda2=sigma2*rho;
 end
 
+% Signal directions: QR of a Gaussian matrix gives a Haar-distributed
+% (uniform) point on the Stiefel manifold St(K,J).
 if J>0
     if isempty(stream), Z=randn(K,J); else, Z=randn(stream,K,J); end
     [R,~]=qr(Z,0);

@@ -52,16 +52,20 @@ for N = o.N
 for snr = o.SNR
 for J = o.J
     cell_id = cell_id + 1;
-    base = o.Seed*1e6 + cell_id;
+    base = o.Seed*1e6 + cell_id;              % one random stream per cell
+    % generate_pca_data takes the total SNR sum_j rho_j / K; convert the
+    % per-component SNR of this design to that scale
     if strcmpi(design,'geometric')
         snrGen = snr*sum(gr.^(0:J-1))/(K*gr^(J-1));
     else
         snrGen = snr*J/K;
     end
-    M = NaN(niter, 5*nm);
+    M = NaN(niter, 5*nm);                     % 5 metrics per method, one row per data set
     reg = false(niter,1); unres = false(niter,1);
 
     parfor i = 1:niter
+        % substream i of the cell's stream makes each data set reproducible
+        % regardless of how parfor distributes the iterations
         stream = RandStream('Threefry','Seed',base);
         stream.Substream = i;
         [s,U,tp] = generate_pca_data(N,K,'sigma2',1.0,'J',J,'SNR',snrGen, ...
@@ -72,17 +76,21 @@ for J = o.J
         [tMML,xMML,Jr,ok,un] = local_mml_fallback(s,N,K,J);
         reg(i) = ok; unres(i) = un;
 
+        % every method is fitted at the MML87 rank Jr (Jr < J only when no
+        % regular J-component solution exists); columns of X beyond Jr stay
+        % zero, so the fitted covariance then has rank Jr
         tau = zeros(nm,1); X = zeros(J,nm);
         % ML
         tML = mean(s(Jr+1:K)); xML = max(s(1:Jr) - tML, 0);
         tau(1) = tML; X(1:Jr,1) = xML;
         % MML87
         tau(2) = tMML; X(1:Jr,2) = xMML;
-        % first-order bias-corrected ML
+        % first-order bias-corrected ML: remove the ML bias of Theorem 1,
+        % -tau(J+1+sum_j 1/rho_j)/N, with rho_j estimated by xML_j/tML
         if Jr > 0
             tBC = tML*(1 + (Jr + 1 + sum(tML./max(xML,realmin)))/N);
         else
-            tBC = tML*N/(N-1);
+            tBC = tML*N/(N-1);                % J = 0: the exactly unbiased estimate
         end
         tau(3) = tBC; X(1:Jr,3) = max(s(1:Jr) - tBC, 0);
         % Passemier, Li & Yao
@@ -118,6 +126,10 @@ end
 
 %% -----------------------------------------------------------------------
 function m = local_metrics(U,K,J,tau,x,Sigma0,tau0,eta0)
+% Metrics for one fitted model Sh = U_J diag(x) U_J' + tau I:
+%   S1 = log(sigmahat/sigma), S2 = S1^2, forward KL(Sigma0||Sh),
+%   reverse KL(Sh||Sigma0), and Seta = mean_j {log(etahat_j/eta_j)/2}^2,
+% where etahat_j = tau + x_j is the fitted j-th signal eigenvalue.
 UJ = U(:,1:J);
 Sh = UJ*diag(x)*UJ' + tau*eye(K);
 z = zeros(K,1);
@@ -141,6 +153,6 @@ for Jr = J:-1:1
     end
 end
 Jr = 0;
-tau = N*sum(s)/(K*(N-1));
+tau = N*sum(s)/(K*(N-1));                 % closed-form rank-zero MML87 estimate
 x = zeros(0,1);
 end

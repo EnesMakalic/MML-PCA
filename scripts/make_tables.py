@@ -11,20 +11,31 @@ Prints the Monte Carlo standard errors and the statistics quoted in the text.
 Requires only the Python standard library.
 """
 import csv
+import math
+import os
 from collections import defaultdict
 
-import os
 HERE = os.path.dirname(os.path.abspath(__file__))
-RES = os.path.join(HERE, '..', 'results') + os.sep
-OUT = os.path.join(RES, 'tex') + os.sep
+RES = os.path.join(HERE, '..', 'results') + os.sep      # simulation CSV files
+OUT = os.path.join(RES, 'tex') + os.sep                 # generated LaTeX
+
+# Estimators shown in the comparison tables, as named in the CSV files (the
+# DGJ shrinkers use the PLY residual variance, hence the 'P' suffix), and the
+# matching column headings in the paper.
 METHODS = ['ML', 'MML', 'BC', 'PLY', 'DGJentP', 'DGJstP']
 HEAD = ['MLE', 'MML87', 'BC', 'PLY', 'DGJ-E', 'DGJ-S']
+# CSV column -> (LaTeX name, number format) for the supplementary tables
 METRICS = {'S2': ('$S_2$', '%.4f'),
            'KL': ('$\\operatorname{KL}(\\boldsymbol{\\Sigma}_0,\\widehat{\\boldsymbol{\\Sigma}})$', '%.3f'),
            'rKL': ('$\\operatorname{KL}(\\widehat{\\boldsymbol{\\Sigma}},\\boldsymbol{\\Sigma}_0)$', '%.3f')}
 
 
 def load(fname, keys):
+    """Read a comparison CSV into {setting: {method: row}}.
+
+    A setting is the tuple of the values of KEYS (e.g. N, SNR, J); each CSV
+    row holds one method's averages and Monte Carlo standard errors.
+    """
     cells = defaultdict(dict)
     for r in csv.DictReader(open(RES + fname)):
         cells[tuple(float(r[k]) for k in keys)][r['Method']] = r
@@ -32,6 +43,7 @@ def load(fname, keys):
 
 
 def bold_min(vals, fmt):
+    """Format VALS and bold every entry equal to the smallest after rounding."""
     s = [fmt % v for v in vals]
     best = min(s, key=float)
     return ['{\\bf %s}' % x if x == best else x for x in s]
@@ -39,15 +51,23 @@ def bold_min(vals, fmt):
 
 def fmt_se(x):
     """Two significant figures in plain decimal notation (no exponent)."""
-    return ('%.2g' % x) if x >= 1e-4 else '%.*f' % (1 - int(__import__('math').floor(__import__('math').log10(x))), x)
+    return ('%.2g' % x) if x >= 1e-4 else '%.*f' % (1 - int(math.floor(math.log10(x))), x)
 
 
 def num(x):
+    """Shortest plain formatting of a setting value (e.g. 25, 0.5)."""
     return '%g' % x
 
 
 # ---------------------------------------------------------------- main Table 1
 def table1_body(cells):
+    """Body of main Table 1: ML against MML87 for each (N, rho, J).
+
+    Columns: regular-solution percentage, then S1, S2, forward KL and reverse
+    KL for ML and MML87. In each pair the better value is bold (smaller |S1|,
+    smaller S2 and KL), unless the two agree after rounding. N and rho are
+    printed once per block with \\multirow.
+    """
     out = []
     Ns = sorted({c[0] for c in cells}); rhos = sorted({c[1] for c in cells}); Js = sorted({c[2] for c in cells})
     for i, N in enumerate(Ns):
@@ -57,6 +77,7 @@ def table1_body(cells):
                 lead = ('\\multirow{%d}{*}{%s}' % (len(rhos) * len(Js), num(N)) if k == 0 and j == 0 else '') + ' & ' + \
                        ('\\multirow{%d}{*}{%s}' % (len(Js), num(rho)) if j == 0 else '')
                 parts = []
+                # (metric, format, compare absolute values?) -- S1 is a signed bias
                 for m, fmt, absv in [('S1', '%.3f', True), ('S2', '%.4f', False), ('KL', '%.3f', False), ('rKL', '%.3f', False)]:
                     a, b = g('ML', m), g('MML', m)
                     sa, sb = fmt % a, fmt % b
@@ -72,13 +93,21 @@ def table1_body(cells):
 
 
 def max_se(cells, methods, metrics):
+    """Largest Monte Carlo standard error of each metric over all settings."""
     return {m: max(float(cells[c][k]['se_' + m]) for c in cells for k in methods) for m in metrics}
 
 
 # ------------------------------------------------------- supplement tables
 def supp_table(cells, keys, metric, caption, label):
+    """One complete supplementary table (Tables S2-S10) for one metric.
+
+    One row per setting, sorted by the setting keys; a key value is printed
+    only when it changes from the previous row, and a rule separates the
+    blocks of the first key. The smallest value in each row is bold, and the
+    caption reports the largest Monte Carlo standard error in the table.
+    """
     name, fmt = METRICS[metric]
-    # DGJ shrinkers use the PLY noise variance, so their S2 equals PLY's
+    # DGJ shrinkers use the PLY residual variance, so their S2 equals PLY's
     meths = METHODS[:4] if metric == 'S2' else METHODS
     head = HEAD[:len(meths)]
     nk = len(keys)
@@ -93,6 +122,7 @@ def supp_table(cells, keys, metric, caption, label):
             lines.append('\\midrule')
         lead = []
         for j in range(nk):
+            # print key j if it or any key to its left changed since the last row
             show = any(c[t] != (prev[t] if prev[t] is not None else None) for t in range(j + 1)) or prev[0] is None
             lead.append(num(c[j]) if show else '')
         prev = list(c)
@@ -108,8 +138,14 @@ def supp_table(cells, keys, metric, caption, label):
 
 # ------------------------------------------------------------ main Table 2
 def compare_summary_body(designs):
-    """Number of settings in which each estimator attains the smallest average
-    loss, for each design and criterion, and the MML87 versus DGJ-S gap."""
+    """Body of main Table 2, and the MML87 versus DGJ-S statistics in the text.
+
+    For each design and criterion, counts the settings in which each
+    estimator has the smallest average loss ('--' where a method is not
+    compared: the DGJ shrinkers share PLY's S2). Also prints the median and
+    largest relative gap |MML87/DGJ-S - 1| in reverse KL over the regular
+    settings (a regular J-component MML87 fit in at least 90% of data sets).
+    """
     out = []
     for d, (label, cells) in enumerate(designs):
         ks = sorted(cells)
@@ -137,12 +173,23 @@ MS_METHODS = ['MML', 'BIC', 'Bayes', 'GIC', 'SPA']
 
 
 def modelsel_tables(fname='final_modelsel.csv'):
+    """Bodies of main Tables 3 (pure noise and rho = 2) and 4 (rho = 5).
+
+    For each N and generating J, one row per method with the forward and
+    reverse KL divergences and the percentages of under-, exact and
+    over-selection; the smallest KL values and the highest exact-recovery
+    rate in each block are bold. Also prints the smallest percentage of data
+    sets in which the MML87 rank equals the largest admissible rank, and the
+    largest Monte Carlo standard error of the KL columns (SPA excluded).
+    """
     cells = defaultdict(dict)
     for r in csv.DictReader(open(RES + fname)):
         cells[(int(r['N']), r['SNR'], int(r['J']))][r['Method']] = r
     M = MS_METHODS
 
     def body(rho, include0):
+        # rows for signal-to-noise ratio RHO, preceded by the pure-noise
+        # block (J = 0) when INCLUDE0
         out=[]; Ns=sorted({c[0] for c in cells})
         for i,N in enumerate(Ns):
             keys=[]
@@ -151,6 +198,7 @@ def modelsel_tables(fname='final_modelsel.csv'):
             nrow=len(keys)*len(M)
             for k,c in enumerate(keys):
                 g=lambda m,x: float(cells[c][m][x])
+                # best values in this block, for bolding
                 bk=min(g(m,'KL') for m in M); br=min(g(m,'rKL') for m in M); be=max(g(m,'exact') for m in M)
                 for j,m in enumerate(M):
                     lead=(f'\\multirow{{{nrow}}}{{*}}{{{N}}}' if k==0 and j==0 else '')+' & '+(f'\\multirow{{{len(M)}}}{{*}}{{{c[2]}}}' if j==0 else '')
@@ -172,6 +220,7 @@ def modelsel_tables(fname='final_modelsel.csv'):
 
 
 # ------------------------------------------------- supplementary Table S1
+# Rows of Table S1: (regime, quantity in final_asymptotic.csv, label, format)
 ASYM_ROWS = [
     ('fixed', 'var_tau', r'$\operatorname{Var}\{\sqrt N(\widehat\tau-\tau)\}$', '%.3f'),
     ('fixed', 'var_x1', r'$\operatorname{Var}\{\sqrt N(\widehat x_1-x_1)\}$', '%.1f'),
@@ -187,6 +236,12 @@ ASYM_ROWS = [
 
 
 def asymptotic_body(fname='final_asymptotic.csv'):
+    """Body of supplementary Table S1: simulated moments against their limits.
+
+    One row per quantity, with the limit from Theorems 2-3 and the estimate
+    at each N. Prints the percentage of regular fits and the Monte Carlo
+    standard errors quoted in the caption.
+    """
     rows = list(csv.DictReader(open(RES + fname)))
     Ns = sorted({int(r['N']) for r in rows})
     get = {(r['regime'], r['quantity'], int(r['N'])): r for r in rows}

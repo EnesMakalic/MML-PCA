@@ -52,7 +52,9 @@ for N = o.N
 for J = o.J
     snrList = o.SNR; if J == 0, snrList = NaN; end
     for snr = snrList
-    cell_id = cell_id + 1; base = o.Seed*1e6 + cell_id;
+    cell_id = cell_id + 1; base = o.Seed*1e6 + cell_id;   % one stream per cell
+    % convert the per-component SNR to generate_pca_data's total SNR scale
+    % (sum_j rho_j / K)
     if J == 0
         snrGen = 1;            % unused
     elseif strcmpi(o.Design,'geometric')
@@ -70,19 +72,21 @@ for J = o.J
             'CenterData',true,'Stream',stream);
         Xc = X - mean(X,1); Sigma0 = tp.Sigma; z = zeros(K,1);
 
-        % MML87
+        % MML87: scan ranks 0..Jmax and keep the shortest codelength
         res = mml_ppca_fp(X,'MaxFactors',Jmax,'Warn',false);
         un(i) = ~isempty(res.unresolved);
         jm = res.J;
-        okJ = res.table(~isnan(res.table(:,2)),1);
-        thr(i) = (jm == max(okJ));
+        okJ = res.table(~isnan(res.table(:,2)),1);   % ranks with a regular solution
+        thr(i) = (jm == max(okJ));                   % selected = largest admissible rank?
 
         % BIC and GIC over 0..Jmax with ML estimates
         bic = zeros(Jmax+1,1); gic = zeros(Jmax+1,1);
         for r = 0:Jmax
             tauML = mean(s(r+1:K));
+            % maximised negative log-likelihood of rank-r PPCA (signal
+            % eigenvalues fitted exactly, residual variance tauML)
             negLL = N/2*(sum(log(s(1:r))) + (K-r)*log(tauML) + K + K*log(2*pi));
-            P = K + K*r - r*(r-1)/2 + 1;
+            P = K + K*r - r*(r-1)/2 + 1;      % free parameters, including the mean
             bic(r+1) = negLL + P/2*log(N);
             gic(r+1) = pca_gic(s,tauML,r,N);
         end
@@ -94,14 +98,19 @@ for J = o.J
         % signflippa draws from the global generator; make it reproducible by
         % continuing this replication's own stream
         RandStream.setGlobalStream(stream);
+        % 100 signflip draws; cutoff = 100th percentile, i.e. compare each
+        % singular value with the maximum of its 100 null draws (q = 1)
         js = min(Jmax, signflippa(Xc, 100, 100));
 
+        % selected ranks, in the order of METHODS ('MML' and 'MML-ML' share
+        % the MML87 rank)
         jj = [jm, jm, jb, jl, jg, js];
         kf = zeros(1,nm); kr = zeros(1,nm);
         for m = 1:nm
             if m == 1
-                Sh = res.Omega;
+                Sh = res.Omega;               % MML87 fitted covariance
             else
+                % maximum likelihood covariance at the selected rank q
                 q = jj(m); tq = mean(s(q+1:K));
                 Sh = U(:,1:q)*diag(max(s(1:q)-tq,0))*U(:,1:q)' + tq*eye(K);
             end

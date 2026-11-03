@@ -21,6 +21,9 @@ J  = 2;
 out = {};
 
 %% Fixed dimension: K = 6, (rho_1, rho_2) = (5, 2), tau = 1
+% With tau = 1 the loading strengths are x_j = rho_j, and Theorem 2 gives the
+% limiting covariance V of sqrt(N)(tau_hat - tau, x_hat - x), with
+% v = 2 tau^2/(K-J) and eta_j = 1 + rho_j.
 K = 6; x0 = [5; 2]; m = K - J;
 V = [2/m, -2/m*ones(1,J); -2/m*ones(J,1), diag(2*(1+x0).^2) + 2/m];
 lim = [V(1,1) V(2,2) V(3,3) V(1,2) V(2,3) 0.95];
@@ -35,6 +38,8 @@ for N = Ns
         [t,x,info] = solve_tau_mml(s,N,J); ok(r) = info.ok;
         if ~info.ok, t = mean(s(J+1:end)); x = s(1:J) - t; end
         Z(r,:) = sqrt(N)*[t-1, (x(:)-x0)'];
+        % 95% interval for tau on the log scale (Section 4 of the paper):
+        % tau_hat * exp(+-z * sqrt(2/(N(K-J))))
         se = sqrt(2/(N*m));
         cover(r) = t*exp(-zq*se) <= 1 && 1 <= t*exp(zq*se);
     end
@@ -52,6 +57,12 @@ for N = Ns
 end
 
 %% Proportional regime: K = N/2, (rho_1, rho_2) = (8, 4), tau = 1
+% Limits of Theorem 3 (notation of Section 5 of the paper): L = lambda(ell),
+% the limit of the j-th sample eigenvalue; b = b(rho) = L - 1 - 2 gamma;
+% z_j, the limiting MML87 loading strength (larger root of
+% (1+gamma)z^2 - b z + gamma = 0); xi_j, the square root of its
+% discriminant; beta_gamma, the limiting centring of N(tau_hat - tau);
+% v_j, the variance factor of the loading limit.
 rho = [8; 4]; g = 0.5;
 L = (1+rho).*(1+g./rho); b = L - 1 - 2*g; xi = sqrt(b.^2 - 4*g*(1+g));
 z = (b + xi)/(2*(1+g)); beta = sum(1./z - 1./rho);
@@ -60,6 +71,7 @@ lim = [beta, 2/g, (z.^2./xi.^2.*v)'];
 names = {'mean_Ntau','var_Ntau','var_x1','var_x2'};
 for N = Ns
     K = N/2;
+    % centre the loadings at z evaluated at the finite-sample ratio K/N
     gN = K/N; bN = (1+rho).*(1+gN./rho) - 1 - 2*gN;
     zN = (bN + sqrt(bN.^2 - 4*gN*(1+gN)))/(2*(1+gN));
     sd = sqrt([1+rho; ones(K-J,1)])';

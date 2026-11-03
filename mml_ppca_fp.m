@@ -124,10 +124,12 @@ for ii = 1:numel(Jlist)
     tbl(ii,:) = [J,NaN,NaN,sinfo.iterations,tauRatio,statusCode(sinfo.status)];
     if ~sinfo.ok, continue; end
 
-    alpha = sqrt(x(:))';
+    alpha = sqrt(x(:))';                      % loading magnitudes lambda_j
     I = local_codelength(delta,N,K,J,tau,alpha,em,o.SignQuotient);
     tbl(ii,2:3) = [I,tau];
 
+    % keep the rank with the shortest codelength; its signal directions are
+    % the leading sample eigenvectors
     if I < best.codelength
         P = U(:,1:J);
         best = struct('J',J,'mu',mu,'tau',tau, ...
@@ -216,6 +218,17 @@ end
 %% -----------------------------------------------------------------------
 % Diagnostics and codelength helpers.
 function d=local_diagnostics(res,tbl,delta,N,K,Jmax,scanned)
+% Diagnostics for the selected model:
+%   saturated        the selected J is the largest possible rank, K-1
+%   boundary         the codelength was still decreasing at J = Jmax
+%   interiorMinimum  the codelength minimum lies strictly inside the scan
+%   tauRatio         tau / smallest sample eigenvalue
+%   sphericity*      likelihood-ratio test that the residual eigenvalues
+%                    delta_{J+1..K} are equal: statistic N*m*log(AM/GM),
+%                    approximately chi-squared with m(m+1)/2-1 degrees of
+%                    freedom, reported as a Wilson-Hilferty normal z-score
+% The test is computed at J' = min(J,K-2), so at least two residual
+% eigenvalues remain.
 d=struct('saturated',false,'boundary',false,'interiorMinimum',false, ...
     'residHeterogeneity',NaN,'sphericityStat',NaN,'sphericityDf',0, ...
     'sphericityZ',NaN,'sphericityAtJ',NaN,'tauRatio',NaN, ...
@@ -259,31 +272,59 @@ end
 
 %% -----------------------------------------------------------------------
 function I=local_codelength(delta,N,K,J,tau,alpha,em,signquot)
-y=alpha(:).^2+tau;
-params=1+J+J*K-J*(J+1)/2+em*K;
-h=0.5*log(tau);
+% Complete MML87 codelength (paper eq. 7) of the rank-J model at the
+% estimates (mu = sample mean, signal directions = leading sample
+% eigenvectors, residual variance tau = sigma^2, loading magnitudes alpha =
+% lambda_j), in nats:
+%   I = -log prior + (1/2) log|Fisher| + (P/2)(log kappa_P + 1) - log lik.
+% The support constants log(Omega_mu*Omega_sigma) are omitted because they
+% are common to every rank. The Vandermonde factors prod_{j<k}(lambda_j^2 -
+% lambda_k^2) in the prior and in |Fisher| cancel exactly and are omitted
+% from both.
+y=alpha(:).^2+tau;                       % signal eigenvalues lambda_j^2 + sigma^2
+params=1+J+J*K-J*(J+1)/2+em*K;           % P: sigma, lambda, Stiefel coords, mean
+
+% h = -log prior (eqs. 27-34)
+h=0.5*log(tau);                          % pi(sigma) proportional to 1/sigma
 if J>0
+    % uniform orientation on St(K,J)/D_J: log Vol = (KJ/2) log(pi) - log Gamma_J(K/2)
     h=h+K*J/2*log(pi)-local_lmvgamma(J,K/2);
+    % ordered loading magnitudes given sigma (eq. 31): -log C^ord_{K,J} (eq. 30),
+    % -J^2 log sigma, -(K-J) sum log lambda_j, +(K+J)/2 sum log(lambda_j^2+sigma^2)
     h=h-J*log(2)-J^2/2*log(pi)-J^2/2*log(tau) ...
         +local_lmvgamma(J,J/2)+local_lmvbeta(J,K/2,J/2) ...
         -(K-J)*sum(log(alpha))+(K+J)/2*sum(log(y));
+    % orientation volume: the first line above is log Vol(St(K,J)/D_J); add
+    % log 2^J to get log Vol(St(K,J)), then remove it again when the column
+    % signs are quotiented out (the default, as in the paper)
     h=h+J*log(2);
     if signquot, h=h-J*log(2); end
 end
+
+% F = (1/2) log|Fisher information| (eqs. 22-25): covariance block, then the
+% mean block |N Sigma^-1| when the mean is estimated (its N^K factor is in
+% the params/2*log(N) term)
 F=params/2*log(N)+(J+1)/2*log(2)+0.5*log(K-J) ...
     -(J*(K-J)+1)/2*log(tau);
 if J>0
     F=F+(2*(K-J)+1)*sum(log(alpha))-(K+1)/2*sum(log(y));
 end
 if em
-    F=F-0.5*((K-J)*log(tau)+sum(log(y)));
+    F=F-0.5*((K-J)*log(tau)+sum(log(y)));   % -(1/2) log|Sigma|
 end
+
+% L = -log likelihood at the estimates; Sigma shares the sample eigenvectors,
+% so tr(Sigma^-1 S) = sum_{k>J} delta_k/tau + sum_{j<=J} delta_j/y_j
 L=N*K/2*log(2*pi)+N/2*((K-J)*log(tau)+sum(log(y))) ...
     +N/2*(sum(delta(J+1:end))/tau+sum(delta(1:J)./y));
 I=h+F+L+local_mmlconst(params);
 end
 
 function c=local_mmlconst(D)
+% Quantisation term (D/2)(log kappa_D + 1) of MML87 for D parameters.
+% kappa_D is the normalised second moment of the best known lattice
+% quantiser in D dimensions (Conway and Sloane; Agrell and Allen 2023) for
+% D <= 16, and the asymptotic approximation of paper eq. (8) for D > 16.
 kap=[1/12,5/(36*sqrt(3)),19/(192*2^(1/3)),13/120/sqrt(2), ...
     2641/(23040*2^(3/5)),12619/(68040*3^(5/6)), ...
     21361/(161280*2^(6/7)),929/12960,0.071622594,0.070813818, ...
