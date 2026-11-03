@@ -121,3 +121,7 @@ cfg = { 0.25, [10 5 2];         0.5, [10 5 3];         1, [20 10 5]; ...
         0.25, [2.5 2 1.5];      0.25, [3 2.5 2 1.75 1.5] };
 T = cor_sim(5000, [100 200 400 800 1600], cfg, 2000);
 ```
+
+## License
+
+This code is released under the MIT License; see [LICENSE](LICENSE). The toolboxes by Tom Minka used by the model-selection study are not distributed here and have their own licences.
