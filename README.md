@@ -73,6 +73,15 @@ addpath('checks');
 T = thm2_sim;   % standardised moments, coverage and MML-ML gap by design and N
 ```
 
+## Checking the proportional-regime limit (Theorem 3)
+
+`checks/thm3_sim.m` checks Theorem 3 for both MML87 and ML in four designs (gamma = 0.1 to 0.75, one or two spikes, including tau = 2) with N = 200 to 10^5. It compares the mean, variance, skewness and kurtosis of N(tau_hat - tau)/tau with the limits, the scaled mean squared error with 2/gamma plus the squared centring, and the mean and variance of sqrt(N)(x_hat_j - tau z_j)/tau with theirs. Only tr(S) and the top J eigenvalues are needed, so it draws them exactly from the Dumitriu-Edelman bidiagonal Wishart model with a rank-J spike update and a Lanczos eigensolver, which makes K up to 75000 feasible; `thm3_sim(R, Ns, [], seed, true)` uses direct eigendecomposition instead, for validation. With 10^5 replications per setting it takes about 20 minutes on 14 workers. Run, from this folder:
+
+```matlab
+addpath('checks');
+T = thm3_sim(1e5);   % moments of N(tau_hat - tau) and of the loadings against Theorem 3
+```
+
 ## Checking Corollary 1 and the entropy-loss remark (Section 5)
 
 `checks/cor_sim.m` computes the Stein and entropy losses of the ML and MML87 covariance estimates in the proportional regime K = gamma*N, for gamma = 0.25, 0.5, 1, one or two spikes and N = 100 to 1600. It compares the mean of L(ML) - L(MML87) with its limit from Corollary 1 (Stein loss, always positive) and from the remark after it (entropy loss, either sign), and reports how often MML87 has the smaller loss. With 5000 replications per setting it takes about 23 minutes on 14 workers. Run, from this folder:
