@@ -64,6 +64,15 @@ addpath('checks');
 T = bias_full;   % table of N*bias: formula vs empirical, with standard errors
 ```
 
+## Checking the fixed-dimension limit (Theorem 2)
+
+`checks/thm2_sim.m` checks the joint normal limit of Theorem 2 for both MML87 and ML, in four fixed-dimension designs (K = 5 to 20, one to three spikes) with N = 50 to 10^5 and 2 x 10^5 replications per setting. In the coordinates (tau, eta_j), where the limiting covariance is diagonal, it reports the means, variances and correlations of the standardised errors, the coverage of 95% Wald intervals for tau and each loading, and sqrt(N)(tau_MML - tau_ML), which tends to zero at the rate given by Theorem 1. It takes about 75 seconds on 14 workers. Run, from this folder:
+
+```matlab
+addpath('checks');
+T = thm2_sim;   % standardised moments, coverage and MML-ML gap by design and N
+```
+
 ## Checking Corollary 1 and the entropy-loss remark (Section 5)
 
 `checks/cor_sim.m` computes the Stein and entropy losses of the ML and MML87 covariance estimates in the proportional regime K = gamma*N, for gamma = 0.25, 0.5, 1, one or two spikes and N = 100 to 1600. It compares the mean of L(ML) - L(MML87) with its limit from Corollary 1 (Stein loss, always positive) and from the remark after it (entropy loss, either sign), and reports how often MML87 has the smaller loss. With 5000 replications per setting it takes about 23 minutes on 14 workers. Run, from this folder:
