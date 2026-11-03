@@ -72,3 +72,13 @@ T = bias_full;   % table of N*bias: formula vs empirical, with standard errors
 addpath('checks');
 T = cor_sim(5000, [100 200 400 800 1600]);   % simulated vs limiting loss differences
 ```
+
+The default settings have one or two spikes. To run three to five spikes, pass the settings as rows of {gamma, rho}, with an optional base seed (about 21 minutes for the following):
+
+```matlab
+cfg = { 0.25, [10 5 2];         0.5, [10 5 3];         1, [20 10 5]; ...
+        0.25, [20 10 5 2];      0.5, [20 10 5 2.5];    1, [40 20 10 5]; ...
+        0.25, [20 10 5 2 1.5];  0.5, [20 10 5 3 2.5];  1, [40 20 10 6 4]; ...
+        0.25, [2.5 2 1.5];      0.25, [3 2.5 2 1.75 1.5] };
+T = cor_sim(5000, [100 200 400 800 1600], cfg, 2000);
+```

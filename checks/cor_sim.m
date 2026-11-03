@@ -1,4 +1,4 @@
-function T = cor_sim(R, Ns)
+function T = cor_sim(R, Ns, cfg, seed0)
 %COR_SIM Monte Carlo check of Corollary 1 (MML87 has smaller limiting Stein
 % loss than ML) and of the entropy-loss remark after it (no reverse result),
 % in the proportional regime K = gamma*N of Proposition 1.
@@ -9,14 +9,19 @@ function T = cor_sim(R, Ns)
 % N*S ~ W_K(N-1, Sigma) via the Bartlett decomposition. MML87 fits without
 % a regular solution are completed by ML at the same J. Losses use the
 % sample eigenvectors exactly. Defaults: R = 2000, Ns = [100 400 1600].
+% CFG is a cell array of {gamma, rho} rows (default: one and two spikes);
+% SEED0 is the base seed (default 1000).
 % R = 5000 with Ns = [100 200 400 800 1600] takes about 23 minutes on 14
 % workers.
 if nargin < 1, R = 2000; end
 if nargin < 2, Ns = [100 400 1600]; end
-cfg = { 0.25, 1.5;  0.25, 2;  0.25, 5;  0.25, 10; ...
-        0.5,  2.5;  0.5,  3;  0.5,  5;  0.5,  10; ...
-        1,    4;    1,    6;  1,    10; ...
-        0.25, [5 2]; 0.5, [8 4] };
+if nargin < 4, seed0 = 1000; end
+if nargin < 3 || isempty(cfg)
+    cfg = { 0.25, 1.5;  0.25, 2;  0.25, 5;  0.25, 10; ...
+            0.5,  2.5;  0.5,  3;  0.5,  5;  0.5,  10; ...
+            1,    4;    1,    6;  1,    10; ...
+            0.25, [5 2]; 0.5, [8 4] };
+end
 rows = {}; id = 0;
 for ic = 1:size(cfg,1)
     g = cfg{ic,1}; rho = cfg{ic,2}(:); J = numel(rho);
@@ -27,7 +32,7 @@ for ic = 1:size(cfg,1)
         dS = zeros(R,1); dE = zeros(R,1); reg = false(R,1);
         LS = zeros(R,2); LE = zeros(R,2);
         parfor r = 1:R
-            st = RandStream('Threefry','Seed',1000+id); st.Substream = r;
+            st = RandStream('Threefry','Seed',seed0+id); st.Substream = r;
             RandStream.setGlobalStream(st);
             A = tril(randn(st,K,K),-1);
             A(1:K+1:end) = sqrt(2*randg(max(nu - (0:K-1),0)/2));
