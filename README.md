@@ -23,9 +23,30 @@ res = mml_ppca_fp(X, 'NumFactors', 2, 'Verbose', true);  % fit a given J
 res.J, res.tau                                           % selected rank and residual variance
 ```
 
+The estimator (`mml_ppca_fp`, `solve_tau_mml`) and the data generator need only base MATLAB.
+
+## Files
+
+| File | Purpose |
+|---|---|
+| `mml_ppca_fp.m` | MML87 probabilistic PCA: selects the number of components from 0,...,Jmax by the shortest codelength, or fits a given rank, and returns the estimates, the codelength of each rank and diagnostics |
+| `solve_tau_mml.m` | Fixed-rank MML87 solver: the damped fixed-point iteration of Algorithm 1 in the paper, with an exact test of whether a regular solution exists |
+| `generate_pca_data.m` | Simulates data from a probabilistic PCA model (equal, geometric or half-Cauchy loadings) |
+| `estimate_tau_ply.m` | Bias-corrected residual variance and spike estimates of Passemier, Li and Yao (2017) |
+| `dgj_shrink.m`, `mp_median.m` | Optimal eigenvalue shrinkers of Donoho, Gavish and Johnstone (2018) for Stein and entropy loss; median of the Marchenko-Pastur law |
+| `pca_gic.m` | Generalized information criterion for PCA rank selection (Hung, Huang and Ing 2022) |
+| `signflippa.m` | Signflip parallel analysis for PCA rank selection (Hong, Sheng and Dobriban) |
+| `mvgkl.m` | Kullback-Leibler divergence between two multivariate Gaussians |
+| `sim_compare.m` | Simulation: ML, MML87 and alternative estimators at a matched rank (Tables 1-2, S2-S10) |
+| `sim_model_sel2.m` | Simulation: rank selection by MML87, BIC, Laplace (Minka), GIC and signflip parallel analysis (Tables 3-4) |
+| `sim_asymptotic.m` | Simulation checks of the limiting distributions (Table S1) |
+| `run_all.m` | Runs the simulations for Tables 1-4 and S2-S10 |
+| `scripts/make_tables.py` | Builds the LaTeX tables from the simulation results |
+| `checks/` | Simulation checks of the theory (see below) |
+
 ## Reproducing the tables in the paper
 
-Requirements: MATLAB with the Parallel Computing Toolbox, Python 3, and two toolboxes by Tom Minka:
+Requirements: MATLAB with the Statistics and Machine Learning Toolbox and the Parallel Computing Toolbox, Python 3, and two toolboxes by Tom Minka:
 
 - the PCA toolbox (`laplace_pca`): https://tminka.github.io/papers/pca/
 - lightspeed (for `row_sum`, used by `laplace_pca`): https://github.com/tminka/lightspeed
@@ -39,7 +60,7 @@ run_all          % Tables 1-4 and S2-S10: 10^5 replications each (about 1 hour o
 sim_asymptotic   % Table S1: 2x10^4 replications at N = 100, 1000, 10000 (about 6 hours on 14 workers)
 ```
 
-`sim_asymptotic` needs only MATLAB and the Parallel Computing Toolbox.
+`sim_asymptotic` needs only MATLAB and the Parallel Computing Toolbox. The scripts in `checks/` below need MATLAB with the Statistics and Machine Learning Toolbox and the Parallel Computing Toolbox.
 
 ```
 python3 scripts/make_tables.py
